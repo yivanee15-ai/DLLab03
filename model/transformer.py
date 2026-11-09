@@ -22,6 +22,7 @@ class StoryTransformerLM(nn.Module):
         d_ff,
         dropout,
         pad_id,
+        causal=True,
     ):
         """Args:
             vocab_size: Number of tokens in the vocabulary.
@@ -32,6 +33,7 @@ class StoryTransformerLM(nn.Module):
             d_ff: Intermediate feed-forward feature dimension.
             dropout: Dropout probability in [0, 1).
             pad_id: Padding token ID in [0, vocab_size).
+            causal: Keep True. False removes the causal mask (mask study only).
         """
         super().__init__()
         self.max_len = max_len
@@ -40,7 +42,7 @@ class StoryTransformerLM(nn.Module):
         self.pos_emb = nn.Embedding(max_len, d_model)  # learned positions
         self.drop = nn.Dropout(dropout)
         self.blocks = nn.ModuleList(
-            [TransformerBlock(d_model, n_heads, d_ff, dropout) for _ in range(n_layers)]
+            [TransformerBlock(d_model, n_heads, d_ff, dropout, causal) for _ in range(n_layers)]
         )
         self.ln_f = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, vocab_size, bias=False)

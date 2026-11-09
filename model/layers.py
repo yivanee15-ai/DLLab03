@@ -7,8 +7,10 @@ from torch import nn
 class MultiHeadCausalSelfAttention(nn.Module):
     """Multi-head self-attention with causal and padding-key masks (from scratch)."""
 
-    def __init__(self, d_model, n_heads, dropout):
+    def __init__(self, d_model, n_heads, dropout, causal=True):
         super().__init__()
+        # causal=False is ONLY for the report's mask study (leaks future tokens).
+        self.causal = causal
         assert d_model % n_heads == 0, "d_model must be divisible by n_heads"
         self.n_heads = n_heads
         self.d_head = d_model // n_heads
@@ -26,7 +28,10 @@ class MultiHeadCausalSelfAttention(nn.Module):
 
         scores = q @ k.transpose(-2, -1) / math.sqrt(self.d_head)  # [B, H, T, T]
         # Causal mask: query i may attend only to keys j <= i.
-        allowed = torch.tril(torch.ones(T, T, dtype=torch.bool, device=x.device))[None, None]
+        if self.causal:
+            allowed = torch.tril(torch.ones(T, T, dtype=torch.bool, device=x.device))[None, None]
+        else:
+            allowed = torch.ones(1, 1, T, T, dtype=torch.bool, device=x.device)
         # Padding key mask: block PAD keys.
         if pad_mask is not None:
             allowed = allowed & pad_mask[:, None, None, :].bool()
@@ -53,10 +58,10 @@ class FeedForward(nn.Module):
 class TransformerBlock(nn.Module):
     """Pre-LayerNorm block: x + Attn(LN(x)), then x + FFN(LN(x))."""
 
-    def __init__(self, d_model, n_heads, d_ff, dropout):
+    def __init__(self, d_model, n_heads, d_ff, dropout, causal=True):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model)
-        self.attn = MultiHeadCausalSelfAttention(d_model, n_heads, dropout)
+        self.attn = MultiHeadCausalSelfAttention(d_model, n_heads, dropout, causal)
         self.ln2 = nn.LayerNorm(d_model)
         self.ffn = FeedForward(d_model, d_ff, dropout)
 
