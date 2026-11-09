@@ -31,7 +31,7 @@ BASE = dict(vocab_size=8000, max_len=MAX_LEN, d_model=256, n_heads=8,
 MODELS = {
     'M1': dict(BASE),                    # baseline: 4 layers
     'M2': dict(BASE, n_layers=2),        # shallower
-    'M3': dict(BASE, n_layers=6),        # deeper
+    'M3': dict(BASE, d_model=128, d_ff=512),  # narrower (4 layers, d_model 128)
 }
 # ---- Training settings -------------------------------------------------------
 TRAINS = {
